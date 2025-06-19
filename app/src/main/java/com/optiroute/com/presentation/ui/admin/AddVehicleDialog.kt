@@ -1,8 +1,10 @@
 package com.optiroute.com.presentation.ui.admin
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -54,6 +56,9 @@ fun AddVehicleDialog(
             capacity.toDoubleOrNull() != null &&
             fuelConsumption.toDoubleOrNull() != null
 
+    // **LANGKAH 1: Tambahkan scroll state**
+    val scrollState = rememberScrollState()
+
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(
@@ -65,12 +70,13 @@ fun AddVehicleDialog(
         Card(
             modifier = Modifier
                 .fillMaxWidth()
+                .fillMaxHeight(0.9f) // Batasi tinggi dialog
                 .padding(16.dp),
             elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
         ) {
             Column(
                 modifier = Modifier
-                    .fillMaxWidth()
+                    .fillMaxSize()
                     .padding(24.dp)
             ) {
                 // Header
@@ -92,164 +98,160 @@ fun AddVehicleDialog(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // License Plate
-                OutlinedTextField(
-                    value = licensePlate,
-                    onValueChange = { licensePlate = it.uppercase() },
-                    label = { Text("License Plate") },
-                    placeholder = { Text("e.g., B 1234 ABC") },
-                    leadingIcon = {
-                        Icon(Icons.Default.DirectionsCar, contentDescription = null)
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = !isLoading,
-                    singleLine = true
-                )
+                // **LANGKAH 2 & 3: Buat Column bisa di-scroll dan atur layout**
+                Column(
+                    modifier = Modifier
+                        .weight(1f) // Gunakan weight agar Column ini mengisi sisa ruang
+                        .verticalScroll(scrollState),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    // License Plate
+                    OutlinedTextField(
+                        value = licensePlate,
+                        onValueChange = { licensePlate = it.uppercase() },
+                        label = { Text("License Plate") },
+                        placeholder = { Text("e.g., B 1234 ABC") },
+                        leadingIcon = {
+                            Icon(Icons.Default.DirectionsCar, contentDescription = null)
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = !isLoading,
+                        singleLine = true
+                    )
 
-                Spacer(modifier = Modifier.height(16.dp))
+                    // Vehicle Type Selection
+                    Text(
+                        text = "Vehicle Type",
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Medium
+                    )
 
-                // Vehicle Type Selection
-                Text(
-                    text = "Vehicle Type",
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Medium
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Column {
-                    VehicleType.values().forEach { vehicleType ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .selectable(
+                    Column {
+                        VehicleType.values().forEach { vehicleType ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .selectable(
+                                        selected = selectedVehicleType == vehicleType,
+                                        enabled = !isLoading,
+                                        onClick = { selectedVehicleType = vehicleType }
+                                    )
+                                    .padding(vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                RadioButton(
                                     selected = selectedVehicleType == vehicleType,
-                                    enabled = !isLoading,
-                                    onClick = { selectedVehicleType = vehicleType }
+                                    onClick = { selectedVehicleType = vehicleType },
+                                    enabled = !isLoading
                                 )
-                                .padding(vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            RadioButton(
-                                selected = selectedVehicleType == vehicleType,
-                                onClick = { selectedVehicleType = vehicleType },
-                                enabled = !isLoading
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Icon(
-                                getVehicleTypeIcon(vehicleType),
-                                contentDescription = null,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = getVehicleTypeDisplayName(vehicleType),
-                                style = MaterialTheme.typography.bodyMedium
-                            )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Icon(
+                                    getVehicleTypeIcon(vehicleType),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = getVehicleTypeDisplayName(vehicleType),
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
                         }
                     }
-                }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                    // Capacity
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = capacity,
+                            onValueChange = { capacity = it },
+                            label = { Text("Capacity") },
+                            leadingIcon = {
+                                Icon(Icons.Default.Scale, contentDescription = null)
+                            },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                            modifier = Modifier.weight(2f),
+                            enabled = !isLoading,
+                            singleLine = true
+                        )
 
-                // Capacity
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
+                        OutlinedTextField(
+                            value = capacityUnit,
+                            onValueChange = { capacityUnit = it },
+                            label = { Text("Unit") },
+                            modifier = Modifier.weight(1f),
+                            enabled = !isLoading,
+                            singleLine = true
+                        )
+                    }
+
+                    // Fuel Consumption
                     OutlinedTextField(
-                        value = capacity,
-                        onValueChange = { capacity = it },
-                        label = { Text("Capacity") },
+                        value = fuelConsumption,
+                        onValueChange = { fuelConsumption = it },
+                        label = { Text("Fuel Consumption (L/100km)") },
                         leadingIcon = {
-                            Icon(Icons.Default.Scale, contentDescription = null)
+                            Icon(Icons.Default.LocalGasStation, contentDescription = null)
                         },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        modifier = Modifier.weight(2f),
+                        modifier = Modifier.fillMaxWidth(),
                         enabled = !isLoading,
                         singleLine = true
                     )
 
+                    // Depot Selection
+                    DepotDropdown(
+                        depots = depots,
+                        selectedDepotId = selectedDepotId,
+                        onDepotSelected = { selectedDepotId = it },
+                        enabled = !isLoading
+                    )
+
+                    // Kurir Assignment (Optional)
                     OutlinedTextField(
-                        value = capacityUnit,
-                        onValueChange = { capacityUnit = it },
-                        label = { Text("Unit") },
-                        modifier = Modifier.weight(1f),
+                        value = kurirId,
+                        onValueChange = { kurirId = it },
+                        label = { Text("Assign to Kurir (Optional)") },
+                        placeholder = { Text("Leave empty for unassigned") },
+                        leadingIcon = {
+                            Icon(Icons.Default.Person, contentDescription = null)
+                        },
+                        modifier = Modifier.fillMaxWidth(),
                         enabled = !isLoading,
                         singleLine = true
                     )
-                }
 
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Fuel Consumption
-                OutlinedTextField(
-                    value = fuelConsumption,
-                    onValueChange = { fuelConsumption = it },
-                    label = { Text("Fuel Consumption (L/100km)") },
-                    leadingIcon = {
-                        Icon(Icons.Default.LocalGasStation, contentDescription = null)
-                    },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = !isLoading,
-                    singleLine = true
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Depot Selection
-                DepotDropdown(
-                    depots = depots,
-                    selectedDepotId = selectedDepotId,
-                    onDepotSelected = { selectedDepotId = it },
-                    enabled = !isLoading
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Kurir Assignment (Optional)
-                OutlinedTextField(
-                    value = kurirId,
-                    onValueChange = { kurirId = it },
-                    label = { Text("Assign to Kurir (Optional)") },
-                    placeholder = { Text("Leave empty for unassigned") },
-                    leadingIcon = {
-                        Icon(Icons.Default.Person, contentDescription = null)
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = !isLoading,
-                    singleLine = true
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Error display
-                if (error != null) {
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.errorContainer
-                        )
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                    // Error display
+                    if (error != null) {
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.errorContainer
+                            )
                         ) {
-                            Icon(
-                                Icons.Default.Error,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onErrorContainer
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = error,
-                                color = MaterialTheme.colorScheme.onErrorContainer,
-                                style = MaterialTheme.typography.bodyMedium
-                            )
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    Icons.Default.Error,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onErrorContainer
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = error,
+                                    color = MaterialTheme.colorScheme.onErrorContainer,
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
                         }
+                        Spacer(modifier = Modifier.height(16.dp))
                     }
-                    Spacer(modifier = Modifier.height(16.dp))
                 }
+
+                Spacer(modifier = Modifier.height(16.dp))
 
                 // Action buttons
                 Row(
